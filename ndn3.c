@@ -83,9 +83,20 @@ void process_client_message(int client_sock) {
     close(client_sock);
 }
 
-// Função para realizar o direct join (comando "dj")
+// Função para realizar o direct join (comando "dj" ou usado por "j")
 // Formato: dj net connectIP connectTCP
 void direct_join(const char *net, const char *connectIP, int connectPort) {
+    // Se connectIP for "0.0.0.0", cria a rede com apenas este nó
+    if (strcmp(connectIP, "0.0.0.0") == 0) {
+        printf("Criando rede com este nó (primeiro nó).\n");
+        strcpy(externalNeighbor.ip, myIP);
+        externalNeighbor.port = myPort;
+        strcpy(safeguardNeighbor.ip, myIP);
+        safeguardNeighbor.port = myPort;
+        return;
+    }
+
+    // Caso contrário, conecta-se ao nó indicado
     int sockfd;
     struct sockaddr_in serv_addr;
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -121,12 +132,12 @@ int main(int argc, char *argv[]) {
     int cache_size = atoi(argv[1]);
     strcpy(myIP, argv[2]);
     myPort = atoi(argv[3]);
-    char regIP[INET_ADDRSTRLEN];
-    strcpy(regIP, argv[4]);
+    char regIP_arg[INET_ADDRSTRLEN];
+    strcpy(regIP_arg, argv[4]);
     int regUDP = atoi(argv[5]);
 
     printf("Iniciando nó NDN: %s:%d, cache=%d, reg server %s:%d\n",
-           myIP, myPort, cache_size, regIP, regUDP);
+           myIP, myPort, cache_size, regIP_arg, regUDP);
 
     // Configuração do socket do servidor TCP
     int server_sock;
@@ -189,7 +200,7 @@ int main(int argc, char *argv[]) {
         if (FD_ISSET(STDIN_FILENO, &read_fds)) {
             char input[MAX_BUFFER];
             if (fgets(input, MAX_BUFFER, stdin) != NULL) {
-                input[strcspn(input, "\n")] = 0; // remove \n
+                input[strcspn(input, "\n")] = 0;
                 // Comando direct join: dj net connectIP connectTCP
                 if (strncmp(input, "dj", 2) == 0) {
                     char cmd[10], net[10], connectIP[INET_ADDRSTRLEN];
@@ -198,6 +209,29 @@ int main(int argc, char *argv[]) {
                         direct_join(net, connectIP, connectPort);
                     } else {
                         printf("Formato inválido para dj. Uso: dj net connectIP connectTCP\n");
+                    }
+                }
+                // Comando join: j net
+                else if (strncmp(input, "j", 1) == 0) {
+                    char cmd[10], net[10];
+                    if (sscanf(input, "%s %s", cmd, net) == 2) {
+                        // Simulação: solicita os dados de conexão
+                        char connectIP[INET_ADDRSTRLEN];
+                        char portStr[10];
+                        int connectPort;
+                        printf("Informe connectIP (ou 0.0.0.0 para criar rede): ");
+                        if(fgets(connectIP, sizeof(connectIP), stdin)==NULL) continue;
+                        connectIP[strcspn(connectIP, "\n")] = 0;
+                        if(strcmp(connectIP, "0.0.0.0") != 0) {
+                            printf("Informe connectPort: ");
+                            if(fgets(portStr, sizeof(portStr), stdin)==NULL) continue;
+                            connectPort = atoi(portStr);
+                        } else {
+                            connectPort = 0;
+                        }
+                        direct_join(net, connectIP, connectPort);
+                    } else {
+                        printf("Formato inválido para join. Uso: j net\n");
                     }
                 }
                 // Comando para mostrar a topologia: st
