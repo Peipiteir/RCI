@@ -84,7 +84,7 @@ int tcp_connect(const char *host, const char *port) {
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
-
+    
     if ((errcode = getaddrinfo(host, port, &hints, &res))) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(errcode));
         return -1;

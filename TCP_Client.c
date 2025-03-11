@@ -16,25 +16,24 @@ int main(){
     struct sockaddr_in addr;
     char buffer[128];
 
-    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    fd = socket(AF_INET, SOCK_STREAM, 0);
     if(fd == -1) exit(1);
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_socktype = SOCK_STREAM;
 
-    errcode = getaddrinfo("194.210.159.255", PORT, &hints, &res);//sigma04.ist.utl.pt
+    errcode = getaddrinfo("sigma01.ist.utl.pt", PORT, &hints, &res);
     if(errcode != 0) exit(1);
 
-    n = sendto(fd, "Hell0!\n", 7, 0, res->ai_addr, res->ai_addrlen);
+    n = connect(fd, res->ai_addr, res->ai_addrlen);
     if(n == -1) exit(1);
 
-    addrlen = sizeof(addr);
-    n = recvfrom(fd, buffer, 128, 0, (struct sockaddr*)&addr, &addrlen);
+    n = write(fd, "Hello!\n", 7);
     if(n == -1) exit(1);
 
-    write(1, "echo: ", 6);
-    write(1, buffer, n);
+    n = read(fd, buffer, 128);
+    if(n == -1) exit(1);
 
     freeaddrinfo(res);
     close(fd);
